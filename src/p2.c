@@ -1,13 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include "csv.h"
-#define P2_FORMAT_IN  "%8s , %3s , %lf , %6s , %c , %6s , %lf , %u , %*u"
+#define P2_FORMAT_IN  "%u , %3s , %lf , %6s , %c , %6s , %lf , %u , %*u"
 #define P2_FORMAT_OUT "%s, %s, %lf, %s, %c, %s, %lf, %u"
 #define P2_FIELDS_IN(p2) p2.date, p2.item_id, &p2.item_price, p2.deadline, &p2.auth, p2.deal_time, &p2.deal_price, &p2.dead_num
 #define P2_FIELDS_OUT(p2) p2.date, p2.item_id, p2.item_price, p2.deadline, p2.auth, p2.deal_time, p2.deal_price, p2.dead_num
 
 typedef struct p2_csv {
-	char date[16];
+	uint32_t date;
 	char item_id[4];
 	double item_price;
 	char deadline[7];

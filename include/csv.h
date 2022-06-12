@@ -11,7 +11,6 @@ typedef int (*cmp)(const void *, const void *);
 struct csv_op {
 	sscan sscan_from;
 	print print_to;
-	cmp compare;
 	size_t struct_size;
 };
 
@@ -19,7 +18,9 @@ struct csv {
 	void (*readcsv)(csv *, char *);
 	void * const (*getrow)(csv *, uint32_t);
 	void (*showrow)(csv *, uint32_t);
-	void (*sort)(csv *);
+	void (*delrow)(csv *, uint32_t);
+	csv (*retset)(csv *, cmp);
+	void (*sort)(csv *, cmp);
 	void (*destroy)(csv *);
 	csv_op __csv_op;
 	uint32_t __row;
