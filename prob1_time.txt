@@ -1,0 +1,5 @@
+0 ~ 1: prepare dataset
+1 ~ 2: solve 5, 8
+2 ~ 3: solve 6, 7, 9
+3 ~ 4: solve 1, 2, 3, 4
+5 ~ 6: solve 10

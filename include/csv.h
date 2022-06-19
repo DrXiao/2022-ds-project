@@ -1,8 +1,8 @@
 #ifndef __CSV_H__
 #define __CSV_H__
-#include <stdint.h>
+#include <stddef.h>
+#define CSV_DELIMITER ","
 
-typedef struct csv csv;
 typedef struct csv_op csv_op;
 typedef int (*sscan)(const char *, void *);
 typedef void (*print)(void *);
@@ -14,22 +14,6 @@ struct csv_op {
 	size_t struct_size;
 };
 
-struct csv {
-	void (*readcsv)(csv *, char *);
-	void * const (*getrow)(csv *, uint32_t);
-	void (*showrow)(csv *, uint32_t);
-	void (*delrow)(csv *, uint32_t);
-	csv (*retset)(csv *, cmp);
-	void (*sort)(csv *, cmp);
-	void (*destroy)(csv *);
-	csv_op __csv_op;
-	uint32_t __row;
-	uint32_t __col;
-	void **__content;
-};
-
 csv_op csv_op_init(sscan, print, size_t);
-csv csv_init(csv_op *);
-
 
 #endif
