@@ -7,4 +7,3 @@ csv_op csv_op_init(sscan sscan_op, print print_op, size_t struct_size) {
 	};
 	return parrayop;
 }
-

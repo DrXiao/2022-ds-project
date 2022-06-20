@@ -1,9 +1,8 @@
-
-STD_C_QSORT := 1
+STD_C_FUNC := 0
 DS := 0
-CFLAGS := -DSTD_C_QSORT=$(STD_C_QSORT) -DDS=$(DS) -std=gnu99 -pedantic-errors -g
+CFLAGS := -DSTD_C_FUNC=$(STD_C_FUNC) -DDS=$(DS) -std=gnu99 -pedantic-errors -g
 
-p1.elf: src/p1.c src/csv.c src/array.c src/parray.c 
+p1.elf: src/p1.c src/csv.c src/util.c src/array.c src/parray.c 
 	gcc $(CFLAGS) -o $@ $^ -Iinclude
 
 p1: p1.elf
@@ -21,7 +20,11 @@ plotp1cmp:
 	gnuplot p1cmp.gp
 	eog plot/p1cmp.png
 
-p2.elf: src/p2.c src/csv.c src/array.c src/parray.c
+plotp2cmp:
+	gnuplot p2cmp.gp
+	eog plot/p2cmp.png
+
+p2.elf: src/p2.c src/csv.c src/util.c src/array.c src/parray.c
 	gcc $(CFLAGS) -o $@ $^ -Iinclude
 
 p2: p2.elf
