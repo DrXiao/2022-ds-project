@@ -97,12 +97,15 @@ int main(int argc, char *argv[]) {
 #elif DS == 1
 	parray ds_obj = parray_init(sizeof(p1));
 #endif
+
 	ds_obj.readcsv(&ds_obj, csvfile, sscan_p1);
+
 #if DS == 0
 	array set_obj = ds_obj.retset(&ds_obj, compare_p1_date);
 #elif DS == 1
 	parray set_obj = ds_obj.retset(&ds_obj, compare_p1_date);
 #endif
+	
 	ds_obj.destroy(&ds_obj);
 	if (sampled_flag) {
 		set_obj.sampled(&set_obj, 5);
@@ -249,13 +252,14 @@ int main(int argc, char *argv[]) {
 
 	GET_TIME(t + time_idx++);
 
+	set_obj.destroy(&set_obj);
+	double_data.destroy(&double_data);
+	
 	fprintf(stderr, "solve-dataset-1 %ld\n", TIME_DIFF(t[0], t[1]));
 	fprintf(stderr, "solve-5-8 %ld\n", TIME_DIFF(t[1], t[2]));
 	fprintf(stderr, "solve-6-7-9 %ld\n", TIME_DIFF(t[2], t[3]));
 	fprintf(stderr, "solve-2-3-4 %ld\n", TIME_DIFF(t[3], t[4]));
 	fprintf(stderr, "solve-10 %ld\n", TIME_DIFF(t[5], t[6]));
-	set_obj.destroy(&set_obj);
-	double_data.destroy(&double_data);
 
 	return 0;
 }

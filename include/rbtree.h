@@ -16,6 +16,9 @@ struct rbtree {
 	void (*sampled)(rbtree *, uint32_t);
 	void (*merge)(rbtree *, rbtree *);
 	void *const (*search)(rbtree *, void *);
+	void (*preorder)(rbtree *, void (*)(void *));
+	void (*inorder)(rbtree *, void (*)(void *));
+	void (*postorder)(rbtree *, void (*)(void *));
 	void (*destroy)(rbtree *);
 	size_t struct_size;
 	cmp compar;

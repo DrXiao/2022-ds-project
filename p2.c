@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
 #elif DS == 1
 		parray obj = parray_init(sizeof(p2));
 #endif
-		obj.readcsv(&obj, csvfile);
+		obj.readcsv(&obj, csvfile, sscan_p2);
 		ds_obj.merge(&ds_obj, &obj);
 		obj.destroy(&obj);
 	}

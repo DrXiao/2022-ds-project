@@ -77,6 +77,12 @@ static uint32_t rbtree_retnodes(rbtree *obj);
 static void rbtree_sampled(rbtree *obj, uint32_t interval);
 static void rbtree_merge(rbtree *obj, rbtree *merge_obj);
 static void *const rbtree_search(rbtree *obj, void *target);
+static void rbtree_preorder(rbtree *obj, void (*behavior)(void *));
+static void rbtree_inorder(rbtree *obj, void (*behavior)(void *));
+static void rbtree_postorder(rbtree *obj, void (*behavior)(void *));
+static void rbtree_preorder_node(rbnode *obj, void (*behavior)(void *));
+static void rbtree_inorder_node(rbnode *obj, void (*behavior)(void *));
+static void rbtree_postorder_node(rbnode *obj, void (*behavior)(void *));
 static void rbtree_destroy(rbtree *obj);
 static void rbtree_node_destroy(rbnode *obj);
 
@@ -97,6 +103,9 @@ rbtree rbtree_init(size_t struct_size, cmp compar) {
 		.sampled = rbtree_sampled,
 		.merge = rbtree_merge,
 		.search = rbtree_search,
+		.preorder = rbtree_preorder,
+		.inorder = rbtree_inorder,
+		.postorder = rbtree_postorder,
 		.destroy = rbtree_destroy,
 		.struct_size = struct_size,
 		.compar = compar,
@@ -214,6 +223,42 @@ static void *const rbtree_search(rbtree *obj, void *target) {
 	return NULL;
 }
 
+static void rbtree_preorder(rbtree *obj, void (*behavior)(void *)) {
+	rbtree_preorder_node(obj->root, behavior);
+}
+
+static void rbtree_inorder(rbtree *obj, void (*behavior)(void *)) {
+	rbtree_inorder_node(obj->root, behavior);
+}
+
+static void rbtree_postorder(rbtree *obj, void (*behavior)(void *)) {
+	rbtree_postorder_node(obj->root, behavior);
+}
+
+static void rbtree_preorder_node(rbnode *obj, void (*behavior)(void *)) {
+	if (obj != NIL) {
+		behavior(obj->data);
+		rbtree_preorder_node(obj->left, behavior);
+		rbtree_preorder_node(obj->right, behavior);
+	}
+}
+
+static void rbtree_inorder_node(rbnode *obj, void (*behavior)(void *)) {
+	if (obj != NIL) {
+		rbtree_inorder_node(obj->left, behavior);
+		behavior(obj->data);
+		rbtree_inorder_node(obj->right, behavior);
+	}
+}
+
+static void rbtree_postorder_node(rbnode *obj, void (*behavior)(void *)) {
+	if (obj != NIL) {
+		rbtree_postorder_node(obj->left, behavior);
+		rbtree_postorder_node(obj->right, behavior);
+		behavior(obj->data);
+	}
+}
+
 static void rbtree_destroy(rbtree *obj) {
 	rbtree_node_destroy(obj->root);
 	obj->root = NIL;
@@ -307,7 +352,7 @@ static void rbtree_insert_fixup(rbtree *obj, rbnode *node) {
 			rbtree_right_rotate(obj, grandparent);
 		}
 		else {
-			if (node == parent->right) {
+			if (node == parent->left) {
 				node = parent;
 				rbtree_right_rotate(obj, node);
 				parent = node->parent;

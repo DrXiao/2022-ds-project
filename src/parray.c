@@ -69,11 +69,12 @@ static void parray_readcsv(parray *obj, const char *filename, sscan sscan_from) 
 			obj->ptr = realloc(obj->ptr, sizeof(void *) * capacity);
 		}
 		sscan_from(buf, (char *)obj->content + obj->row * struct_size);
-		obj->ptr[obj->row] = (char *)obj->content + obj->row * struct_size;
 		obj->row++;
 	}
 	obj->content = realloc(obj->content, struct_size * obj->row);
 	obj->ptr = realloc(obj->ptr, sizeof(void *) * obj->row);
+	for (int i = 0; i < obj->row; i++)
+		obj->ptr[i] = (void *)((char *)obj->content + i * struct_size);
 	fclose(file);
 }
 
@@ -82,7 +83,7 @@ static void parray_create(parray *obj, uint32_t num) {
 	obj->ptr = malloc(sizeof(void *) * num);
 	size_t struct_size = obj->struct_size;
 	for (int i = 0; i < num; i++)
-		obj->ptr[i] = (char *)obj->content + obj->row * struct_size;
+		obj->ptr[i] = (char *)obj->content + i * struct_size;
 	obj->row = num;
 }
 
@@ -165,13 +166,14 @@ static void parray_merge(parray *obj, parray *merge_obj) {
 	obj->ptr = realloc(obj->ptr, sizeof(void *) * newrow);
 	memcpy((char *)obj->content + obj->row * struct_size,
 	       (char *)merge_obj->content, struct_size * merge_obj->row);
-	for (int i = obj->row; i < merge_obj->row; i++) {
+	for (int i = 0; i < newrow; i++) {
 		obj->ptr[i] = (char *)obj->content + i * struct_size;
 	}
 	obj->row = newrow;
 	free(merge_obj->content);
 	free(merge_obj->ptr);
 	merge_obj->row = 0;
+	merge_obj->content = NULL;
 	merge_obj->ptr = NULL;
 }
 
