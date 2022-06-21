@@ -4,7 +4,6 @@
 #include <string.h>
 #include "array.h"
 #include "parray.h"
-#include "csv.h"
 #include "util.h"
 #define P1_FORMAT "%u, %lf, %lf, %lf, %lf"
 #define P1_FIELDS_IN(p1)                                                       \
@@ -93,13 +92,12 @@ int main(int argc, char *argv[]) {
 	int time_idx = 0;
 
 	GET_TIME(t + time_idx++);
-	csv_op csvop = csv_op_init(sscan_p1, print_p1, sizeof(p1));
 #if DS == 0
-	array ds_obj = array_init(&csvop);
+	array ds_obj = array_init(sizeof(p1));
 #elif DS == 1
-	parray ds_obj = parray_init(&csvop);
+	parray ds_obj = parray_init(sizeof(p1));
 #endif
-	ds_obj.readcsv(&ds_obj, csvfile);
+	ds_obj.readcsv(&ds_obj, csvfile, sscan_p1);
 #if DS == 0
 	array set_obj = ds_obj.retset(&ds_obj, compare_p1_date);
 #elif DS == 1
@@ -217,11 +215,10 @@ int main(int argc, char *argv[]) {
 	printf("subprob 10 - max, min, median prices\n");
 
 	GET_TIME(t + time_idx++);
-	csvop = csv_op_init(NULL, print_d, sizeof(double));
 #if DS == 0
-	array double_data = array_init(&csvop);
+	array double_data = array_init(sizeof(double));
 #elif DS == 1
-	parray double_data = parray_init(&csvop);
+	parray double_data = parray_init(sizeof(double));
 #endif
 	double_data.create(&double_data, row_size << 2);
 

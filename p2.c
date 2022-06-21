@@ -4,7 +4,6 @@
 #include <string.h>
 #include "array.h"
 #include "parray.h"
-#include "csv.h"
 #include "util.h"
 #define P2_FORMAT_IN "%u , %s , %s , %s , %s , %u , %lf , %u , %*u"
 #define P2_FORMAT_OUT "%u, %s, %s, %s, %s, %u, %lf, %u"
@@ -76,19 +75,18 @@ int main(int argc, char **argv) {
 	struct timespec t[10];
 	int time_idx = 0;
 
-	csv_op csvop = csv_op_init(sscan_p2, print_p2, sizeof(p2));
 #if DS == 0
-	array ds_obj = array_init(&csvop);
+	array ds_obj = array_init(sizeof(p2));
 #elif DS == 1
-	parray ds_obj = parray_init(&csvop);
+	parray ds_obj = parray_init(sizeof(p2));
 #endif
 	GET_TIME(t + time_idx++);
 	for (int i = 0; i < 5; i++) {
 		char *csvfile = argv[1 + i];
 #if DS == 0
-		array obj = array_init(&csvop);
+		array obj = array_init(sizeof(p2));
 #elif DS == 1
-		parray obj = parray_init(&csvop);
+		parray obj = parray_init(sizeof(p2));
 #endif
 		obj.readcsv(&obj, csvfile);
 		ds_obj.merge(&ds_obj, &obj);

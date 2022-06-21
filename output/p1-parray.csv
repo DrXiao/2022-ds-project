@@ -1,5 +1,1 @@
-solve-dataset-1 21933343
-solve-5-8 1775180
-solve-6-7-9 5268193
-solve-2-3-4 3037814
-solve-10 14643643
+make: *** [Makefile:9: p1] Segmentation fault (core dumped)

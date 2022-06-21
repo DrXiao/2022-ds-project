@@ -4,16 +4,15 @@
 #include <stdbool.h>
 #include <string.h>
 #include "array.h"
-#include "csv.h"
 #include "util.h"
 #define BUF_SIZE 512
 #define INIT_MAX_ALLOC_SIZE 1024
 
-static void array_readcsv(array *obj, char *filename);
+static void array_readcsv(array *obj, const char *filename, sscan sscan_from);
 static void array_create(array *obj, uint32_t num);
 static void *const array_getrow(array *obj, uint32_t idx);
 static void array_setrow(array *obj, uint32_t idx, void *val);
-static void array_showrow(array *obj, uint32_t idx);
+static void array_showrow(array *obj, uint32_t idx, print print_to);
 static void array_delrow(array *obj, uint32_t idx);
 static array array_retset(array *obj, cmp compar);
 static uint32_t array_retrows(array *obj);
@@ -23,7 +22,7 @@ static void array_sort(array *obj, cmp compar);
 static void *const array_search(array *obj, void *target, cmp compar);
 static void array_destroy(array *obj);
 
-array array_init(csv_op *op) {
+array array_init(size_t struct_size) {
 	array obj = {.readcsv = array_readcsv,
 		     .create = array_create,
 		     .getrow = array_getrow,
@@ -37,14 +36,14 @@ array array_init(csv_op *op) {
 		     .sort = array_sort,
 		     .search = array_search,
 		     .destroy = array_destroy,
-		     .csvop = *op,
+		     .struct_size = struct_size,
 		     .row = 0,
 		     .col = 0,
 		     .content = NULL};
 	return obj;
 }
 
-static void array_readcsv(array *obj, char *filename) {
+static void array_readcsv(array *obj, const char *filename, sscan sscan_from) {
 	char buf[BUF_SIZE];
 	char *token = NULL;
 	FILE *file = fopen(filename, "r");
@@ -58,18 +57,17 @@ static void array_readcsv(array *obj, char *filename) {
 	}
 	obj->col = col;
 	obj->content =
-		malloc(obj->csvop.struct_size * INIT_MAX_ALLOC_SIZE);
+		malloc(obj->struct_size * INIT_MAX_ALLOC_SIZE);
 	int capacity = INIT_MAX_ALLOC_SIZE;
 
-	size_t struct_size = obj->csvop.struct_size;
+	size_t struct_size = obj->struct_size;
 	while (fgets(buf, sizeof(buf), file)) {
 		if (obj->row == capacity) {
 			capacity <<= 1;
 			obj->content =
 				realloc(obj->content, struct_size * capacity);
 		}
-		obj->csvop.sscan_from(buf, (char *)obj->content +
-						      obj->row * struct_size);
+		sscan_from(buf, (char *)obj->content + obj->row * struct_size);
 		obj->row++;
 	}
 	obj->content = realloc(obj->content, struct_size * obj->row);
@@ -77,37 +75,36 @@ static void array_readcsv(array *obj, char *filename) {
 }
 
 static void array_create(array *obj, uint32_t num) {
-	obj->content = malloc(obj->csvop.struct_size * num);
+	obj->content = malloc(obj->struct_size * num);
 	obj->row = num;
 }
 
 static void *const array_getrow(array *obj, uint32_t idx) {
-	return (char *)obj->content + idx * obj->csvop.struct_size;
+	return (char *)obj->content + idx * obj->struct_size;
 }
 
 static void array_setrow(array *obj, uint32_t idx, void *val) {
-	memcpy((char *)obj->content + idx * obj->csvop.struct_size, val,
-	       obj->csvop.struct_size);
+	memcpy((char *)obj->content + idx * obj->struct_size, val,
+	       obj->struct_size);
 }
 
-static void array_showrow(array *obj, uint32_t idx) {
-	obj->csvop.print_to((char *)obj->content +
-			       idx * obj->csvop.struct_size);
+static void array_showrow(array *obj, uint32_t idx, print print_to) {
+	print_to((char *)obj->content + idx * obj->struct_size);
 }
 
 static void array_delrow(array *obj, uint32_t idx) {
-	memcpy((char *)obj->content + idx * obj->csvop.struct_size,
-	       (char *)obj->content + (idx + 1) * obj->csvop.struct_size,
-	       obj->csvop.struct_size * (obj->row - idx - 1));
+	memcpy((char *)obj->content + idx * obj->struct_size,
+	       (char *)obj->content + (idx + 1) * obj->struct_size,
+	       obj->struct_size * (obj->row - idx - 1));
 	obj->row--;
 }
 
 static array array_retset(array *obj, cmp compar) {
 	obj->sort(obj, compar);
-	array retobj = array_init(&obj->csvop);
-	retobj.content = malloc(obj->csvop.struct_size * obj->row);
+	array retobj = array_init(obj->struct_size);
+	retobj.content = malloc(obj->struct_size * obj->row);
 	retobj.col = obj->col;
-	size_t struct_size = obj->csvop.struct_size;
+	size_t struct_size = obj->struct_size;
 	uint32_t newrow = 0;
 	int cur_idx = 0;
 	if (obj->row != 0) {
@@ -142,7 +139,7 @@ static uint32_t array_retrows(array *obj) {
 
 static void array_sampled(array *obj, uint32_t interval) {
 	uint32_t newrow = 0;
-	size_t struct_size = obj->csvop.struct_size;
+	size_t struct_size = obj->struct_size;
 	char temp[struct_size];
 	for (int i = 0; i < obj->row; i += interval) {
 		swap((char *)obj->content + newrow * struct_size,
@@ -155,7 +152,7 @@ static void array_sampled(array *obj, uint32_t interval) {
 
 static void array_merge(array *obj, array *merge_obj) {
 	uint32_t newrow = obj->row + merge_obj->row;
-	size_t struct_size = obj->csvop.struct_size;
+	size_t struct_size = obj->struct_size;
 	obj->content = realloc(obj->content, struct_size * newrow);
 	memcpy((char *)obj->content + obj->row * struct_size,
 	       merge_obj->content, struct_size * merge_obj->row);
@@ -167,7 +164,7 @@ static void array_merge(array *obj, array *merge_obj) {
 
 static void max_heapify(array *obj, int idx, cmp compar) {
 	uint32_t row = obj->row;
-	size_t struct_size = obj->csvop.struct_size;
+	size_t struct_size = obj->struct_size;
 
 	while (true) {
 		int lnode = idx << 1;
@@ -202,11 +199,11 @@ static void max_heapify(array *obj, int idx, cmp compar) {
 
 static void array_sort(array *obj, cmp compar) {
 #if STD_C_FUNC == 1
-	qsort((void *)obj->content, obj->row, obj->csvop.struct_size,
+	qsort((void *)obj->content, obj->row, obj->struct_size,
 	      compar);
 #else
 	uint32_t row = obj->row;
-	size_t struct_size = obj->csvop.struct_size;
+	size_t struct_size = obj->struct_size;
 	for (int i = row >> 1; i >= 0; i--)
 		max_heapify(obj, i, compar);
 
@@ -222,7 +219,7 @@ static void array_sort(array *obj, cmp compar) {
 
 static void *const array_search(array *obj, void *target, cmp compar) {
 	return bsearch(target, obj->content, obj->row,
-		       obj->csvop.struct_size, compar);
+		       obj->struct_size, compar);
 }
 
 static void array_destroy(array *obj) {
