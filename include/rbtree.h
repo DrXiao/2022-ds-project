@@ -19,6 +19,7 @@ struct rbtree {
 	void (*preorder)(rbtree *, void (*)(void *));
 	void (*inorder)(rbtree *, void (*)(void *));
 	void (*postorder)(rbtree *, void (*)(void *));
+	rbtree (*rebuild)(rbtree *, cmp);
 	void (*destroy)(rbtree *);
 	size_t struct_size;
 	cmp compar;

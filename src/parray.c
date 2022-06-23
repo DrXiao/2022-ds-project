@@ -44,7 +44,8 @@ parray parray_init(size_t struct_size) {
 	return obj;
 }
 
-static void parray_readcsv(parray *obj, const char *filename, sscan sscan_from) {
+static void parray_readcsv(parray *obj, const char *filename,
+			   sscan sscan_from) {
 	char buf[BUF_SIZE];
 	char *token = NULL;
 	FILE *file = fopen(filename, "r");
@@ -65,7 +66,8 @@ static void parray_readcsv(parray *obj, const char *filename, sscan sscan_from) 
 	while (fgets(buf, sizeof(buf), file)) {
 		if (obj->row == capacity) {
 			capacity <<= 1;
-			obj->content = realloc(obj->content, struct_size * capacity);
+			obj->content =
+				realloc(obj->content, struct_size * capacity);
 			obj->ptr = realloc(obj->ptr, sizeof(void *) * capacity);
 		}
 		sscan_from(buf, (char *)obj->content + obj->row * struct_size);
@@ -119,18 +121,18 @@ static parray parray_retset(parray *obj, cmp compar) {
 	int cur_idx = 0;
 	if (obj->row != 0) {
 		for (int i = 1; i < obj->row; i++) {
-			if (compar(obj->ptr + cur_idx,
-				    obj->ptr + i) != 0) {
-				retobj.ptr[newrow] = (char *)retobj.content + newrow * struct_size;
-				memcpy(retobj.ptr[newrow],
-				       obj->ptr[cur_idx], struct_size);
+			if (compar(obj->ptr + cur_idx, obj->ptr + i) != 0) {
+				retobj.ptr[newrow] = (char *)retobj.content +
+						     newrow * struct_size;
+				memcpy(retobj.ptr[newrow], obj->ptr[cur_idx],
+				       struct_size);
 				newrow++;
 				cur_idx = i;
 			}
 		}
-		retobj.ptr[newrow] = (char *)retobj.content + newrow * struct_size;
-		memcpy(retobj.ptr[newrow], obj->ptr[cur_idx],
-		       struct_size);
+		retobj.ptr[newrow] =
+			(char *)retobj.content + newrow * struct_size;
+		memcpy(retobj.ptr[newrow], obj->ptr[cur_idx], struct_size);
 		newrow++;
 	}
 	retobj.content = realloc(retobj.content, struct_size * newrow);
@@ -148,10 +150,9 @@ static void parray_sampled(parray *obj, uint32_t interval) {
 	uint32_t newrow = 0;
 	size_t struct_size = obj->struct_size;
 	for (int i = 0; i < obj->row; i += interval) {
-		swap(obj->ptr + newrow, obj->ptr + i,
-		     sizeof(void *));
+		swap(obj->ptr + newrow, obj->ptr + i, sizeof(void *));
 		swap((char *)obj->content + newrow * struct_size,
-		     (char *)obj->content + i * struct_size, struct_size); 
+		     (char *)obj->content + i * struct_size, struct_size);
 		newrow++;
 	}
 	obj->content = realloc(obj->content, struct_size * newrow);
@@ -184,16 +185,16 @@ static void max_heapify(parray *obj, int idx, cmp compar) {
 		int rnode = (idx << 1) + 1;
 		int max_idx = idx;
 		if (lnode < row) {
-			max_idx = compar(obj->ptr + max_idx,
-					  obj->ptr + lnode) < 0
-					  ? lnode
-					  : max_idx;
+			max_idx =
+				compar(obj->ptr + max_idx, obj->ptr + lnode) < 0
+					? lnode
+					: max_idx;
 		}
 		if (rnode < row) {
-			max_idx = compar(obj->ptr + max_idx,
-					  obj->ptr + rnode) < 0
-					  ? rnode
-					  : max_idx;
+			max_idx =
+				compar(obj->ptr + max_idx, obj->ptr + rnode) < 0
+					? rnode
+					: max_idx;
 		}
 
 		if (max_idx != idx) {
@@ -225,8 +226,7 @@ static void parray_sort(parray *obj, cmp compar) {
 
 static void *const parray_search(parray *obj, void *target, cmp compar) {
 	void **ptarget = &target;
-	return bsearch(ptarget, obj->ptr, obj->row, sizeof(void *),
-		       compar);
+	return bsearch(ptarget, obj->ptr, obj->row, sizeof(void *), compar);
 }
 
 static void parray_destroy(parray *obj) {

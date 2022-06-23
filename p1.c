@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
 #elif DS == 1
 	parray set_obj = ds_obj.retset(&ds_obj, compare_p1_date);
 #endif
-	
+
 	ds_obj.destroy(&ds_obj);
 	if (sampled_flag) {
 		set_obj.sampled(&set_obj, 5);
@@ -177,7 +177,6 @@ int main(int argc, char *argv[]) {
 	fclose(subprob7);
 	fclose(subprob9);
 	GET_TIME(t + time_idx++);
-
 
 	// subprob 2 ~ 4
 	set_obj.sort(&set_obj, compare_p1_c_price);
@@ -254,7 +253,7 @@ int main(int argc, char *argv[]) {
 
 	set_obj.destroy(&set_obj);
 	double_data.destroy(&double_data);
-	
+
 	fprintf(stderr, "solve-dataset-1 %ld\n", TIME_DIFF(t[0], t[1]));
 	fprintf(stderr, "solve-5-8 %ld\n", TIME_DIFF(t[1], t[2]));
 	fprintf(stderr, "solve-6-7-9 %ld\n", TIME_DIFF(t[2], t[3]));

@@ -56,8 +56,7 @@ static void array_readcsv(array *obj, const char *filename, sscan sscan_from) {
 		token = strtok(NULL, CSV_DELIMITER);
 	}
 	obj->col = col;
-	obj->content =
-		malloc(obj->struct_size * INIT_MAX_ALLOC_SIZE);
+	obj->content = malloc(obj->struct_size * INIT_MAX_ALLOC_SIZE);
 	int capacity = INIT_MAX_ALLOC_SIZE;
 
 	size_t struct_size = obj->struct_size;
@@ -109,9 +108,8 @@ static array array_retset(array *obj, cmp compar) {
 	int cur_idx = 0;
 	if (obj->row != 0) {
 		for (int i = 1; i < obj->row; i++) {
-			if (compar((char *)obj->content +
-					    cur_idx * struct_size,
-				    (char *)obj->content + i * struct_size) !=
+			if (compar((char *)obj->content + cur_idx * struct_size,
+				   (char *)obj->content + i * struct_size) !=
 			    0) {
 				memcpy((char *)retobj.content +
 					       newrow * struct_size,
@@ -172,17 +170,17 @@ static void max_heapify(array *obj, int idx, cmp compar) {
 		int max_idx = idx;
 		if (lnode < row) {
 			max_idx = compar((char *)obj->content +
-						  max_idx * struct_size,
-					  (char *)obj->content +
-						  lnode * struct_size) < 0
+						 max_idx * struct_size,
+					 (char *)obj->content +
+						 lnode * struct_size) < 0
 					  ? lnode
 					  : max_idx;
 		}
 		if (rnode < row) {
 			max_idx = compar((char *)obj->content +
-						  max_idx * struct_size,
-					  (char *)obj->content +
-						  rnode * struct_size) < 0
+						 max_idx * struct_size,
+					 (char *)obj->content +
+						 rnode * struct_size) < 0
 					  ? rnode
 					  : max_idx;
 		}
@@ -199,8 +197,7 @@ static void max_heapify(array *obj, int idx, cmp compar) {
 
 static void array_sort(array *obj, cmp compar) {
 #if STD_C_FUNC == 1
-	qsort((void *)obj->content, obj->row, obj->struct_size,
-	      compar);
+	qsort((void *)obj->content, obj->row, obj->struct_size, compar);
 #else
 	uint32_t row = obj->row;
 	size_t struct_size = obj->struct_size;
@@ -218,8 +215,8 @@ static void array_sort(array *obj, cmp compar) {
 }
 
 static void *const array_search(array *obj, void *target, cmp compar) {
-	return bsearch(target, obj->content, obj->row,
-		       obj->struct_size, compar);
+	return bsearch(target, obj->content, obj->row, obj->struct_size,
+		       compar);
 }
 
 static void array_destroy(array *obj) {

@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <string.h>
 #include "rbtree.h"
+#include "queue.h"
 #include "util.h"
 #define BUF_SIZE 512
 #define NIL &nil_node
@@ -35,16 +36,14 @@ static rbnode nil_node = {
 };
 
 static rbnode rbnode_init(cmp compar, void *data, size_t data_size) {
-	rbnode obj = {
-		.black = false,
-		.parent = NIL,
-		.left = NIL,
-		.right = NIL,
-		.compar = compar,
-		.compar_data = rbnode_cmp,
-		.destroy = rbnode_destroy,
-		.dealloc = rbnode_dealloc
-	};
+	rbnode obj = {.black = false,
+		      .parent = NIL,
+		      .left = NIL,
+		      .right = NIL,
+		      .compar = compar,
+		      .compar_data = rbnode_cmp,
+		      .destroy = rbnode_destroy,
+		      .dealloc = rbnode_dealloc};
 	obj.data = malloc(data_size);
 	memcpy(obj.data, data, data_size);
 	return obj;
@@ -83,6 +82,7 @@ static void rbtree_postorder(rbtree *obj, void (*behavior)(void *));
 static void rbtree_preorder_node(rbnode *obj, void (*behavior)(void *));
 static void rbtree_inorder_node(rbnode *obj, void (*behavior)(void *));
 static void rbtree_postorder_node(rbnode *obj, void (*behavior)(void *));
+static rbtree rbtree_rebuild(rbtree *obj, cmp new_compar);
 static void rbtree_destroy(rbtree *obj);
 static void rbtree_node_destroy(rbnode *obj);
 
@@ -93,30 +93,29 @@ static void rbtree_insert_fixup(rbtree *obj, rbnode *node);
 static void rbtree_erase_fixup(rbtree *obj, rbnode *node);
 static void *rbtree_node_successor(rbtree *obj, rbnode *node);
 
-
 rbtree rbtree_init(size_t struct_size, cmp compar) {
-	rbtree obj = {
-		.readcsv = rbtree_readcsv,
-		.insert = rbtree_insert,
-		.erase = rbtree_erase,
-		.retnodes = rbtree_retnodes,
-		.sampled = rbtree_sampled,
-		.merge = rbtree_merge,
-		.search = rbtree_search,
-		.preorder = rbtree_preorder,
-		.inorder = rbtree_inorder,
-		.postorder = rbtree_postorder,
-		.destroy = rbtree_destroy,
-		.struct_size = struct_size,
-		.compar = compar,
-		.nodes = 0,
-		.col = 0,
-		.root = NIL
-	};
+	rbtree obj = {.readcsv = rbtree_readcsv,
+		      .insert = rbtree_insert,
+		      .erase = rbtree_erase,
+		      .retnodes = rbtree_retnodes,
+		      .sampled = rbtree_sampled,
+		      .merge = rbtree_merge,
+		      .search = rbtree_search,
+		      .preorder = rbtree_preorder,
+		      .inorder = rbtree_inorder,
+		      .postorder = rbtree_postorder,
+		      .rebuild = rbtree_rebuild,
+		      .destroy = rbtree_destroy,
+		      .struct_size = struct_size,
+		      .compar = compar,
+		      .nodes = 0,
+		      .col = 0,
+		      .root = NIL};
 	return obj;
 }
 
-static void rbtree_readcsv(rbtree *obj, const char *filename, sscan sscan_from) {
+static void rbtree_readcsv(rbtree *obj, const char *filename,
+			   sscan sscan_from) {
 	char buf[BUF_SIZE];
 	char *token = NULL;
 	FILE *file = fopen(filename, "r");
@@ -163,7 +162,7 @@ static bool rbtree_insert(rbtree *obj, void *val) {
 
 static bool rbtree_erase(rbtree *obj, void *val) {
 	rbnode **iptr = &obj->root;
-	while(*iptr != NIL) {
+	while (*iptr != NIL) {
 		int ret = (*iptr)->compar_data((*iptr), val);
 		if (ret == 0) {
 			bool erase_black = false;
@@ -173,12 +172,14 @@ static bool rbtree_erase(rbtree *obj, void *val) {
 				void *tmp = (*iptr)->data;
 				(*iptr)->data = successor->data;
 				successor->data = tmp;
-				iptr = (successor->parent->left == successor) ? 
-					&successor->parent->left : &successor->parent->right;
+				iptr = (successor->parent->left == successor)
+					       ? &successor->parent->left
+					       : &successor->parent->right;
 			}
 			erase_node = *iptr;
 			erase_black = erase_node->black;
-			*iptr = (erase_node->left != NIL) ? erase_node->left : erase_node->right;
+			*iptr = (erase_node->left != NIL) ? erase_node->left
+							  : erase_node->right;
 			(*iptr)->parent = erase_node->parent;
 			erase_node->dealloc(erase_node);
 			if (erase_black) {
@@ -187,7 +188,6 @@ static bool rbtree_erase(rbtree *obj, void *val) {
 			nil_node.black = true;
 			nil_node.parent = NIL;
 			return true;
-
 		}
 		else if (ret < 0)
 			iptr = &(*iptr)->right;
@@ -202,11 +202,9 @@ static uint32_t rbtree_retnodes(rbtree *obj) {
 }
 
 static void rbtree_sampled(rbtree *obj, uint32_t interval) {
-
 }
 
 static void rbtree_merge(rbtree *obj, rbtree *merge_obj) {
-
 }
 
 static void *const rbtree_search(rbtree *obj, void *target) {
@@ -259,6 +257,23 @@ static void rbtree_postorder_node(rbnode *obj, void (*behavior)(void *)) {
 	}
 }
 
+static rbtree rbtree_rebuild(rbtree *obj, cmp new_compar) {
+	queue rebuild_queue = queue_init(sizeof(rbnode *));
+	rbtree retobj = rbtree_init(obj->struct_size, new_compar);
+	rebuild_queue.insert(&rebuild_queue, &obj->root);
+	rbnode **node = NULL;
+	while (node = rebuild_queue.first(&rebuild_queue)) {
+		retobj.insert(&retobj, (*node)->data);
+		if ((*node)->left != NIL)
+			rebuild_queue.insert(&rebuild_queue, &(*node)->left);
+		if ((*node)->right != NIL)
+			rebuild_queue.insert(&rebuild_queue, &(*node)->right);
+		rebuild_queue.erase(&rebuild_queue);
+	}
+	rebuild_queue.destroy(&rebuild_queue);
+	return retobj;
+}
+
 static void rbtree_destroy(rbtree *obj) {
 	rbtree_node_destroy(obj->root);
 	obj->root = NIL;
@@ -276,7 +291,7 @@ static void rbtree_left_rotate(rbtree *obj, rbnode *node) {
 	rbnode *parent = node->parent;
 	rbnode *right = node->right;
 	rbnode **parent_child = NULL;
-	
+
 	if (node == parent->left)
 		parent_child = &parent->left;
 	else
@@ -286,14 +301,14 @@ static void rbtree_left_rotate(rbtree *obj, rbnode *node) {
 
 	if (right->left != NIL)
 		right->left->parent = node;
-	
+
 	right->parent = parent;
 
 	if (parent != NIL)
 		*parent_child = right;
 	else
 		obj->root = right;
-	
+
 	right->left = node;
 	node->parent = right;
 }
@@ -306,12 +321,12 @@ static void rbtree_right_rotate(rbtree *obj, rbnode *node) {
 		parent_child = &parent->left;
 	else
 		parent_child = &parent->right;
-	
+
 	node->left = left->right;
 
 	if (left->right != NIL)
 		left->right->parent = node;
-	
+
 	left->parent = parent;
 
 	if (parent != NIL)
@@ -324,7 +339,7 @@ static void rbtree_right_rotate(rbtree *obj, rbnode *node) {
 }
 
 static void rbtree_insert_fixup(rbtree *obj, rbnode *node) {
-	while(node->parent->black == false) {
+	while (node->parent->black == false) {
 		rbnode *parent = node->parent;
 		rbnode *grandparent = parent->parent;
 		rbnode *uncle = NIL;
@@ -419,7 +434,7 @@ static void rbtree_erase_fixup(rbtree *obj, rbnode *node) {
 
 static void *rbtree_node_successor(rbtree *obj, rbnode *node) {
 	rbnode *successor = node->right;
-	while(successor->left != NIL)
+	while (successor->left != NIL)
 		successor = successor->left;
 	return successor;
 }
